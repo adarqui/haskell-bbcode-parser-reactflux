@@ -80,7 +80,7 @@ codeToHTML tag = do
     Strike xs            -> del_ <$> bbcodeToHTML xs
     Font opts xs         -> runFont opts xs
     Size opts xs         -> runSize opts xs
-    Color opts xs        -> pure mempty
+    Color opts xs        -> runColor opts xs
     Center xs            -> p_ [style [("text-align", "center")]] <$> bbcodeToHTML xs
     AlignLeft xs         -> p_ [style [("text-align", "left")]] <$> bbcodeToHTML xs
     AlignRight xs        -> p_ [style [("text-align", "right")]] <$> bbcodeToHTML xs
