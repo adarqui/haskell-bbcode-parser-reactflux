@@ -1,4 +1,6 @@
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module Data.BBCode.HTML.ReactFlux (
     runBBCodeToHTML
@@ -10,6 +12,9 @@ module Data.BBCode.HTML.ReactFlux (
 
 
 import           Control.Monad.Trans.RWS
+import qualified Data.Map                as Map
+import           Data.Monoid             ((<>))
+import qualified Data.Text               as Text
 import           React.Flux
 
 import           Data.BBCode
@@ -49,7 +54,7 @@ codeToHTML tag = do
     Underline xs         -> span_ [] <$> bbcodeToHTML xs -- style underline
     Strike xs            -> del_ <$> bbcodeToHTML xs
     Font opts xs         -> pure mempty
-    Size opts xs         -> pure mempty
+    Size opts xs         -> runSize opts xs
     Color opts xs        -> pure mempty
     Center xs            -> p_ [] <$> bbcodeToHTML xs -- align center
     AlignLeft xs         -> pure mempty
@@ -74,3 +79,27 @@ codeToHTML tag = do
     HR                   -> pure $ hr_ mempty
     NL                   -> pure $ br_ mempty
     _                    -> pure $ p_ $ elemText "unknown"
+
+
+
+runSize :: SizeOpts -> [BBCode] -> ParseEff HTMLView_
+runSize size_opts xs = do
+  r <- ask
+  let code = (case Map.lookup "size" (trfm r) of
+                Nothing -> Size size_opts xs
+                Just trfm -> trfm (Size size_opts xs))
+  go code
+  where
+  go (Size SizeOpts{..} xs) = do
+    html <- bbcodeToHTML xs
+    let size = (case sizeValue of
+                  Just (SizePx n) -> (Text.pack $ show n) <> "px"
+                  Just (SizePt n) -> (Text.pack $ show n) <> "pt"
+                  Just (SizeEm n) -> (Text.pack $ show n) <> "em"
+                  _               -> "12pt")
+    pure $ span_ [] html
+  go _ = pure mempty
+
+
+
+

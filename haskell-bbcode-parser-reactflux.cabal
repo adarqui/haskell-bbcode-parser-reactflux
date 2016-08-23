@@ -17,8 +17,10 @@ library
   hs-source-dirs:      src
   exposed-modules:     Data.BBCode.HTML.ReactFlux
   build-depends:       base >= 4.7 && < 5
+                     , containers
                      , haskell-bbcode-parser
                      , react-flux
+                     , text
                      , transformers
   default-language:    Haskell2010
 
