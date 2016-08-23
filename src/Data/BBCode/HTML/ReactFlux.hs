@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
@@ -19,9 +20,33 @@ import           React.Flux
 
 import           Data.BBCode
 
+import           Data.Text               (Text)
+import qualified Data.Text               as Text
+
+#ifdef __GHCJS__
+import           Data.JSString           (JSString)
+import qualified Data.JSString.Text      as JSS (textToJSString)
+#else
+type JSString = String
+#endif
+
+
+
+#ifdef __GHCJS__
+textToJSString' :: Text -> JSString
+textToJSString' = JSS.textToJSString
+#else
+textToJSString' :: Text -> String
+textToJSString' = Text.unpack
+#endif
+
 
 
 type HTMLView_ = ReactElementM ViewEventHandler ()
+
+
+
+
 
 
 
@@ -51,14 +76,14 @@ codeToHTML tag = do
   case tag of
     Bold xs              -> strong_ <$> bbcodeToHTML xs
     Italic xs            -> em_ <$> bbcodeToHTML xs
-    Underline xs         -> span_ [] <$> bbcodeToHTML xs -- style underline
+    Underline xs         -> span_ [style [("text-decoration", "underline")]] <$> bbcodeToHTML xs
     Strike xs            -> del_ <$> bbcodeToHTML xs
-    Font opts xs         -> pure mempty
+    Font opts xs         -> runFont opts xs
     Size opts xs         -> runSize opts xs
     Color opts xs        -> pure mempty
-    Center xs            -> p_ [] <$> bbcodeToHTML xs -- align center
-    AlignLeft xs         -> pure mempty
-    AlignRight xs        -> pure mempty
+    Center xs            -> p_ [style [("text-align", "center")]] <$> bbcodeToHTML xs
+    AlignLeft xs         -> p_ [style [("text-align", "left")]] <$> bbcodeToHTML xs
+    AlignRight xs        -> p_ [style [("text-align", "right")]] <$> bbcodeToHTML xs
     Quote author xs      -> pure mempty
     Link (Just name) url -> pure mempty
     Link Nothing url     -> pure mempty
@@ -86,7 +111,7 @@ runSize :: SizeOpts -> [BBCode] -> ParseEff HTMLView_
 runSize size_opts xs = do
   r <- ask
   let code = (case Map.lookup "size" (trfm r) of
-                Nothing -> Size size_opts xs
+                Nothing   -> Size size_opts xs
                 Just trfm -> trfm (Size size_opts xs))
   go code
   where
@@ -102,4 +127,18 @@ runSize size_opts xs = do
 
 
 
-
+runFont :: FontOpts -> [BBCode] -> ParseEff HTMLView_
+runFont font_opts xs = do
+  r <- ask
+  let code = (case Map.lookup "font" (trfm r) of
+                Nothing   -> Font font_opts xs
+                Just trfm -> trfm (Font font_opts xs))
+  go code
+  where
+  go (Font FontOpts{..} xs) = do
+    html <- bbcodeToHTML xs
+    let font_family = (case fontFamily of
+                         Nothing  -> "sans-serif"
+                         Just fam -> fam)
+    pure $ span_ [style [("font-family", textToJSString' font_family)]] html
+  go _ = pure mempty
