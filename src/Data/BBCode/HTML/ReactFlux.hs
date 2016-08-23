@@ -142,3 +142,22 @@ runFont font_opts xs = do
                          Just fam -> fam)
     pure $ span_ [style [("font-family", textToJSString' font_family)]] html
   go _ = pure mempty
+
+
+
+runColor :: ColorOpts -> [BBCode] -> ParseEff HTMLView_
+runColor color_opts xs = do
+  r <- ask
+  let code = (case Map.lookup "color" (trfm r) of
+                Nothing   -> Color color_opts xs
+                Just trfm -> trfm (Color color_opts xs))
+  go code
+  where
+  go (Color ColorOpts{..} xs) = do
+    html <- bbcodeToHTML xs
+    let color' = (case colorValue of
+                    Just (ColorName name) -> name
+                    Just (ColorHex hex)   -> hex
+                    _                     -> "black")
+    pure $ span_ [style [("color", textToJSString' color')]] html
+  go _ = pure mempty
