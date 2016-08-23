@@ -84,9 +84,9 @@ codeToHTML tag = do
     Center xs            -> p_ [style [("text-align", "center")]] <$> bbcodeToHTML xs
     AlignLeft xs         -> p_ [style [("text-align", "left")]] <$> bbcodeToHTML xs
     AlignRight xs        -> p_ [style [("text-align", "right")]] <$> bbcodeToHTML xs
-    Quote author xs      -> pure mempty
-    Link (Just name) url -> pure mempty
-    Link Nothing url     -> pure mempty
+    Quote author xs      -> blockquote_ <$> bbcodeToHTML xs
+    Link (Just name) url -> pure $ a_ ["href" @= url, "target" $= "_blank"] $ elemText name
+    Link Nothing url     -> pure $ a_ ["href" @= url, "target" $= "_blank"] $ elemText url
     List list            -> pure mempty
     OrdList list         -> pure mempty
     Table table          -> pure mempty
