@@ -95,7 +95,7 @@ codeToHTML tag = do
     Move xs              -> pure mempty
     Text text            -> pure $ elemText text
     Image opts url       -> runImage opts url
-    Youtube url          -> pure mempty
+    Youtube url          -> pure $ iframe_ ["src" $= textToJSString' url] mempty
     Vimeo url            -> pure mempty
     Facebook url         -> pure mempty
     Instagram url        -> pure mempty
