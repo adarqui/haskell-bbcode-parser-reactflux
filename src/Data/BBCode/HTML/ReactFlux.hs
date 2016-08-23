@@ -94,7 +94,7 @@ codeToHTML tag = do
     Code _ code          -> pure $ pre_ $ elemText code
     Move xs              -> pure mempty
     Text text            -> pure $ elemText text
-    Image opts url       -> pure mempty
+    Image opts url       -> runImage opts url
     Youtube url          -> pure mempty
     Vimeo url            -> pure mempty
     Facebook url         -> pure mempty
@@ -160,4 +160,29 @@ runColor color_opts xs = do
                     Just (ColorHex hex)   -> hex
                     _                     -> "black")
     pure $ span_ [style [("color", textToJSString' color')]] html
+  go _ = pure mempty
+
+
+
+runImage :: ImageOpts -> MediaURL -> ParseEff HTMLView_
+runImage image_opts url = do
+  r <- ask
+  let code = (case Map.lookup "img" (trfm r) of
+                Nothing   -> Image image_opts url
+                Just trfm -> trfm (Image image_opts url))
+  go code
+  where
+  go :: BBCode -> ParseEff HTMLView_
+  go (Image ImageOpts{..} url) = do
+    let
+      height_props = case imageHeight of
+                       Nothing               -> []
+                       Just (ImagePx n)      -> [(textToJSString' "height", ((textToJSString' $ Text.pack $ show n) <> "px"))]
+                       Just (ImagePercent n) -> [(textToJSString' "height", ((textToJSString' $ Text.pack $ show n) <> "pct"))]
+      width_props = case imageWidth of
+                      Nothing               -> []
+                      Just (ImagePx n)      -> [(textToJSString' "width", ((textToJSString' $ Text.pack $ show n) <> "px"))]
+                      Just (ImagePercent n) -> [(textToJSString' "width", ((textToJSString' $ Text.pack $ show n) <> "pct"))]
+      props = height_props <> width_props
+    pure $ img_ [style props, "src" $= textToJSString' url] mempty
   go _ = pure mempty
