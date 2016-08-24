@@ -64,7 +64,7 @@ runBBCodeToHTMLWith parse_reader codes =
 bbcodeToHTML :: [BBCode] -> ParseEff HTMLView_
 bbcodeToHTML codes = go [] codes
   where
-  go acc []     = pure mempty
+  go acc [] = pure $ mconcat $ reverse acc
   go acc (x:xs) = do
     html <- codeToHTML x
     go (html : acc) xs
