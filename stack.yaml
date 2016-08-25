@@ -38,6 +38,8 @@ resolver: lts-6.13
 packages:
 - '.'
 - '../haskell-bbcode-parser'
+- '../haskell-media-embed'
+- '../haskell-media-embed-reactflux'
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
 extra-deps: [react-flux-1.1.1]

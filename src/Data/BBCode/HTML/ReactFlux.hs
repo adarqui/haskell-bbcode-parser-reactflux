@@ -16,12 +16,14 @@ import           Control.Monad.Trans.RWS
 import qualified Data.Map                as Map
 import           Data.Monoid             ((<>))
 import qualified Data.Text               as Text
+import           Data.Text               (Text)
 import           React.Flux
 
 import           Data.BBCode
+import           Web.Media.Embed.ReactFlux
+import           Web.Media.Embed
 
-import           Data.Text               (Text)
-import qualified Data.Text               as Text
+
 
 #ifdef __GHCJS__
 import           Data.JSString           (JSString)
@@ -43,10 +45,6 @@ textToJSString' = Text.unpack
 
 
 type HTMLView_ = ReactElementM ViewEventHandler ()
-
-
-
-
 
 
 
@@ -95,7 +93,7 @@ codeToHTML tag = do
     Move xs              -> pure mempty
     Text text            -> pure $ elemText text
     Image opts url       -> runImage opts url
-    Youtube url          -> pure $ iframe_ ["src" $= textToJSString' url] mempty
+    Youtube url          -> runYoutube url
     Vimeo url            -> pure mempty
     Facebook url         -> pure mempty
     Instagram url        -> pure mempty
@@ -186,3 +184,9 @@ runImage image_opts url = do
       props = height_props <> width_props
     pure $ img_ [style props, "src" $= textToJSString' url] mempty
   go _ = pure mempty
+
+
+
+runYoutube :: Text -> ParseEff HTMLView_
+runYoutube url = do
+  pure $ renderYoutube defaultYoutubeEmbed
