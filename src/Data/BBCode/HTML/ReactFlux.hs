@@ -189,4 +189,4 @@ runImage image_opts url = do
 
 runYoutube :: Text -> ParseEff HTMLView_
 runYoutube url = do
-  pure $ renderYoutube defaultYoutubeEmbed
+  pure $ simpleRenderYoutube url (defaultIFrame { iframeHeight = Just 405, iframeWidth = Just 720 })
