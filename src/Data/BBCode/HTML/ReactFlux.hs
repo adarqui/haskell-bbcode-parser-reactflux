@@ -96,7 +96,7 @@ codeToHTML tag = do
     Youtube url          -> runYoutube url
     Vimeo url            -> pure mempty
     Facebook url         -> pure mempty
-    Instagram url        -> pure mempty
+    Instagram url        -> runInstagram url
     Streamable url       -> pure mempty
     Imgur url            -> pure mempty
     HR                   -> pure $ hr_ mempty
@@ -190,3 +190,12 @@ runImage image_opts url = do
 runYoutube :: Text -> ParseEff HTMLView_
 runYoutube url = do
   pure $ simpleRenderYoutube url (defaultIFrame { iframeHeight = Just 405, iframeWidth = Just 720 })
+
+
+
+runInstagram :: Text -> ParseEff HTMLView_
+runInstagram url = do
+  pure $ simpleRenderInstagram url (defaultIFrame { iframeHeight = Just 710
+                                                  , iframeWidth = Just 612
+                                                  , iframeScrolling = Just ScrollingNo
+                                                  })
