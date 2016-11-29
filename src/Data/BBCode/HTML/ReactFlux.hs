@@ -215,4 +215,5 @@ runEmoticon emot_key = do
 
     -- Our beautiful emoticon
     Just (emoticons_map, emoticons_route) ->
-      pure $ img_ ["className" $= "bbcode-emoticon", "src" $= textToJSString' (emoticons_route <> "/" <> emot_key)] mempty
+      -- emoticons are .gif's!!
+      pure $ img_ ["className" $= "bbcode-emoticon", "src" $= textToJSString' (emoticons_route <> "/" <> emot_key <> ".gif")] mempty
