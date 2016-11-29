@@ -13,6 +13,8 @@ module Data.BBCode.HTML.ReactFlux (
 
 
 import           Control.Monad.Trans.RWS
+import           Data.Bimap              (Bimap)
+import qualified Data.Bimap              as Bimap
 import qualified Data.Map                as Map
 import           Data.Monoid             ((<>))
 import qualified Data.Text               as Text
@@ -92,6 +94,7 @@ codeToHTML tag = do
     Code _ code          -> pure $ pre_ $ elemText code
     Move xs              -> pure mempty
     Text text            -> pure $ elemText text
+    Emoticon emot        -> runEmoticon emot
     Image opts url       -> runImage opts url
     Youtube url          -> runYoutube url
     Vimeo url            -> pure mempty
@@ -199,3 +202,17 @@ runInstagram url = do
                                                   , iframeWidth = Just 612
                                                   , iframeScrolling = Just ScrollingNo
                                                   })
+
+
+
+runEmoticon :: Text -> ParseEff HTMLView_
+runEmoticon emot_key = do
+  emoticons <- asks emoticons
+  case emoticons of
+
+    -- This shouldn't happen .. getting an emoticon without having an emoticon Bimap.
+    Nothing -> pure $ elemText emot_key
+
+    -- Our beautiful emoticon
+    Just (emoticons_map, emoticons_route) ->
+      pure $ img_ ["className" $= "bbcode-emoticon", "src" $= textToJSString' (emoticons_route <> "/" <> emot_key)] mempty
