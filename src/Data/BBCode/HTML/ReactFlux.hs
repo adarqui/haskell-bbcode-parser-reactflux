@@ -75,24 +75,23 @@ bbcodeToHTML codes = go [] codes
 codeToHTML :: BBCode -> ParseEff HTMLView_
 codeToHTML tag = do
   case tag of
-    Bold xs              -> strong_ <$> bbcodeToHTML xs
-    Italic xs            -> em_ <$> bbcodeToHTML xs
-    Underline xs         -> span_ [style [("text-decoration", "underline")]] <$> bbcodeToHTML xs
-    Strike xs            -> del_ <$> bbcodeToHTML xs
+    Bold xs              -> strong_ ["className" $= "bbcode-bold"] <$> bbcodeToHTML xs
+    Italic xs            -> em_ ["className" $= "bbcode-italic"] <$> bbcodeToHTML xs
+    Underline xs         -> span_ ["className" $= "bbcode-underline", style [("text-decoration", "underline")]] <$> bbcodeToHTML xs
+    Strike xs            -> del_ ["className" $= "bbcode-strike"] <$> bbcodeToHTML xs
     Font opts xs         -> runFont opts xs
     Size opts xs         -> runSize opts xs
     Color opts xs        -> runColor opts xs
-    Center xs            -> p_ [style [("text-align", "center")]] <$> bbcodeToHTML xs
-    AlignLeft xs         -> p_ [style [("text-align", "left")]] <$> bbcodeToHTML xs
-    AlignRight xs        -> p_ [style [("text-align", "right")]] <$> bbcodeToHTML xs
+    Center xs            -> p_ ["className" $= "bbcode-align-center", style [("text-align", "center")]] <$> bbcodeToHTML xs
+    AlignLeft xs         -> p_ ["className" $= "bbcode-align-left", style [("text-align", "left")]] <$> bbcodeToHTML xs
+    AlignRight xs        -> p_ ["className" $= "bbcode-align-right", style [("text-align", "right")]] <$> bbcodeToHTML xs
     Quote m_author m_link m_date xs -> runQuote m_author m_link m_date xs
-    Link (Just name) url -> pure $ a_ ["href" @= url, "target" $= "_blank"] $ elemText name
-    Link Nothing url     -> pure $ a_ ["href" @= url, "target" $= "_blank"] $ elemText url
+    Link m_name url      -> runLink m_name url
     List list            -> pure mempty
     OrdList list         -> pure mempty
     Table table          -> pure mempty
-    Pre text             -> pure $ pre_ $ elemText text
-    Code _ code          -> pure $ pre_ $ elemText code
+    Pre text             -> pure $ pre_ ["className" $= "bbcode-pre"] $ elemText text
+    Code _ code          -> pure $ pre_ ["className" $= "bbcode-code"] $ elemText code
     Move xs              -> pure mempty
     Text text            -> pure $ elemText text
     Emoticon emot        -> runEmoticon emot
@@ -105,7 +104,7 @@ codeToHTML tag = do
     Imgur url            -> pure mempty
     HR                   -> pure $ hr_ mempty
     NL                   -> pure $ br_ mempty
-    _                    -> pure $ p_ $ elemText "unknown"
+    _                    -> pure $ p_ ["className" $= "bbcode-unknown"] $ elemText "unknown"
 
 
 
@@ -124,7 +123,7 @@ runSize size_opts xs = do
                   Just (SizePt n) -> (Text.pack $ show n) <> "pt"
                   Just (SizeEm n) -> (Text.pack $ show n) <> "em"
                   _               -> "12pt")
-    pure $ span_ [] html
+    pure $ span_ ["className" $= "bbcode-size"] html
   go _ = pure mempty
 
 
@@ -142,7 +141,7 @@ runFont font_opts xs = do
     let font_family = (case fontFamily of
                          Nothing  -> "sans-serif"
                          Just fam -> fam)
-    pure $ span_ [style [("font-family", textToJSString' font_family)]] html
+    pure $ span_ ["className" $= "bbcode-font", style [("font-family", textToJSString' font_family)]] html
   go _ = pure mempty
 
 
@@ -161,7 +160,7 @@ runColor color_opts xs = do
                     Just (ColorName name) -> name
                     Just (ColorHex hex)   -> hex
                     _                     -> "black")
-    pure $ span_ [style [("color", textToJSString' color')]] html
+    pure $ span_ ["className" $= "bbcode-color", style [("color", textToJSString' color')]] html
   go _ = pure mempty
 
 
@@ -186,7 +185,7 @@ runImage image_opts url = do
                       Just (ImagePx n)      -> [(textToJSString' "width", ((textToJSString' $ Text.pack $ show n) <> "px"))]
                       Just (ImagePercent n) -> [(textToJSString' "width", ((textToJSString' $ Text.pack $ show n) <> "pct"))]
       props = height_props <> width_props
-    pure $ img_ [style props, "src" $= textToJSString' url] mempty
+    pure $ img_ ["className" $= "bbcode-img", style props, "src" $= textToJSString' url] mempty
   go _ = pure mempty
 
 
@@ -239,8 +238,16 @@ runQuote m_author m_link m_date xs = do
 
     -- optional title, or clickable title
     --
-    case (link, m_title) of
-      (Nothing, Just title)   -> p_ $ elemText title
-      (Just link, Just title) -> a_ ["href" @= link, "target" $= "_blank"] $ elemText title
-      _                       -> mempty
-    blockquote_ bb
+    cldiv_ "bbcode-quote" $ do
+
+      case (link, m_title) of
+        (Nothing, Just title)   -> p_ ["className" $= "bbcode-quote-title"] $ elemText title
+        (Just link, Just title) -> a_ ["className" $= "bbcode-quote-title", "href" @= link, "target" $= "_blank"] $ elemText title
+        _                       -> mempty
+      blockquote_ ["className" $= "bbcode-quote-body"] bb
+
+
+
+runLink :: Maybe Text -> Text -> ParseEff HTMLView_
+runLink (Just name) url = pure $ a_ ["className" $= "bbcode-link", "href" @= url, "target" $= "_blank"] $ elemText name
+runLink Nothing url     = pure $ a_ ["className" $= "bbcode-link", "href" @= url, "target" $= "_blank"] $ elemText url
