@@ -20,6 +20,7 @@ import           Data.Monoid             ((<>))
 import qualified Data.Text               as Text
 import           Data.Text               (Text)
 import           React.Flux
+import           Text.Printf
 
 import           Data.BBCode
 import           Web.Media.Embed.ReactFlux
@@ -84,7 +85,7 @@ codeToHTML tag = do
     Center xs            -> p_ [style [("text-align", "center")]] <$> bbcodeToHTML xs
     AlignLeft xs         -> p_ [style [("text-align", "left")]] <$> bbcodeToHTML xs
     AlignRight xs        -> p_ [style [("text-align", "right")]] <$> bbcodeToHTML xs
-    Quote m_author m_link m_date xs -> blockquote_ <$> bbcodeToHTML xs
+    Quote m_author m_link m_date xs -> runQuote m_author m_link m_date xs
     Link (Just name) url -> pure $ a_ ["href" @= url, "target" $= "_blank"] $ elemText name
     Link Nothing url     -> pure $ a_ ["href" @= url, "target" $= "_blank"] $ elemText url
     List list            -> pure mempty
@@ -217,3 +218,29 @@ runEmoticon emot_key = do
     Just (emoticons_map, emoticons_route) ->
       -- emoticons are .gif's!!
       pure $ img_ ["className" $= "bbcode-emoticon", "src" $= textToJSString' (emoticons_route <> "/" <> emot_key <> ".gif")] mempty
+
+
+
+runQuote :: Maybe Text -> Maybe Text -> Maybe Text -> [BBCode] -> ParseEff HTMLView_
+runQuote m_author m_link m_date xs = do
+
+  ParseReader{..} <- ask
+  let
+    link = case (m_link, linkResource) of
+                (Just link, Just trfm) -> Just $ trfm link
+                _                      -> Nothing
+    m_title =
+      case (m_author, m_date) of
+        (Just author, Just date) -> Just $ Text.pack $ printf "Quote from %s at %s" author date
+        _                        -> Nothing
+
+  bb <- bbcodeToHTML xs
+  pure $ do
+
+    -- optional title, or clickable title
+    --
+    case (link, m_title) of
+      (Nothing, Just title)   -> p_ $ elemText title
+      (Just link, Just title) -> a_ ["href" @= link, "target" $= "_blank"] $ elemText title
+      _                       -> mempty
+    blockquote_ bb
