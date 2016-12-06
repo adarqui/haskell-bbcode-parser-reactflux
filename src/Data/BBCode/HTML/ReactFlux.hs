@@ -85,7 +85,7 @@ codeToHTML tag = do
     Center xs            -> p_ ["className" $= "bbcode-align-center", style [("text-align", "center")]] <$> bbcodeToHTML xs
     AlignLeft xs         -> p_ ["className" $= "bbcode-align-left", style [("text-align", "left")]] <$> bbcodeToHTML xs
     AlignRight xs        -> p_ ["className" $= "bbcode-align-right", style [("text-align", "right")]] <$> bbcodeToHTML xs
-    Quote m_author m_link m_date xs -> runQuote m_author m_link m_date xs
+    Quote m_author m_avatar m_link m_date xs -> runQuote m_author m_avatar m_link m_date xs
     Link m_name url      -> runLink m_name url
     List list            -> pure mempty
     OrdList list         -> pure mempty
@@ -220,8 +220,8 @@ runEmoticon emot_key = do
 
 
 
-runQuote :: Maybe Text -> Maybe Text -> Maybe Text -> [BBCode] -> ParseEff HTMLView_
-runQuote m_author m_link m_date xs = do
+runQuote :: Maybe Text -> Maybe Text -> Maybe Text -> Maybe Text -> [BBCode] -> ParseEff HTMLView_
+runQuote m_author m_avatar m_link m_date xs = do
 
   ParseReader{..} <- ask
   let
@@ -239,6 +239,11 @@ runQuote m_author m_link m_date xs = do
     -- optional title, or clickable title
     --
     cldiv_ "bbcode-quote" $ do
+
+      -- If author exists and we have an avatar url, embed a small avatar for sexyness
+      case (m_author, m_avatar) of
+        (Just author, Just avatar) -> img_ ["src" $= textToJSString' ("//www.gravatar.com/avatar/" <> avatar <> "?d=identicon&r=pg&s=20"), "alt" $= textToJSString' author] mempty
+        _                          -> mempty
 
       case (link, m_title) of
         (Nothing, Just title)   -> p_ ["className" $= "bbcode-quote-title"] $ elemText title
