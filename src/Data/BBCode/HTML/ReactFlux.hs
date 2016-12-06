@@ -13,18 +13,21 @@ module Data.BBCode.HTML.ReactFlux (
 
 
 import           Control.Monad.Trans.RWS
-import           Data.Bimap              (Bimap)
-import qualified Data.Bimap              as Bimap
-import qualified Data.Map                as Map
-import           Data.Monoid             ((<>))
-import qualified Data.Text               as Text
-import           Data.Text               (Text)
+import           Data.Bimap                (Bimap)
+import qualified Data.Bimap                as Bimap
+import qualified Data.Map                  as Map
+import           Data.Monoid               ((<>))
+import           Data.Text                 (Text)
+import qualified Data.Text                 as Text
+import           Data.Time.Clock.POSIX
+import           Data.Time.Format
 import           React.Flux
 import           Text.Printf
+import           Text.Read
 
 import           Data.BBCode
-import           Web.Media.Embed.ReactFlux
 import           Web.Media.Embed
+import           Web.Media.Embed.ReactFlux
 
 
 
@@ -230,7 +233,14 @@ runQuote m_author m_avatar m_link m_date xs = do
                 _                      -> Nothing
     m_title =
       case (m_author, m_date) of
-        (Just author, Just date) -> Just $ Text.pack $ printf "Quote from %s at %s" author date
+        (Just author, Just date) -> let
+                                      m_date_int     = readMaybe (Text.unpack date) :: Maybe Integer
+                                      format_int int = formatTime defaultTimeLocale  "%c" $ posixSecondsToUTCTime $ fromIntegral int
+                                      pretty_date    = case m_date_int of
+                                                         Nothing       -> "" -- badly formatted date
+                                                         Just date_int -> " on " <> format_int date_int
+                                    in
+                                      Just $ Text.pack $ printf "Quote from %s%s" author pretty_date
         _                        -> Nothing
 
   bb <- bbcodeToHTML xs

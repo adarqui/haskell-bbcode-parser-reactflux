@@ -24,6 +24,7 @@ library
                      , haskell-media-embed-reactflux
                      , react-flux
                      , text
+                     , time
                      , transformers
 
   if impl(ghcjs)
